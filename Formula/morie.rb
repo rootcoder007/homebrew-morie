@@ -3,8 +3,8 @@ class Morie < Formula
 
   desc "Multi-domain scientific computing toolkit with the MRM framework"
   homepage "https://hadesllm.github.io/morie/"
-  url "https://files.pythonhosted.org/packages/82/58/9117d4641e8c2bda668d90218b9d25ad6eb6a0d335b8a804e14d66c87939/morie-0.9.0.tar.gz"
-  sha256 "e35471354282b86a5390c18925e87ca37204872aaf8876a68499b90b7e0edec8"
+  url "https://files.pythonhosted.org/packages/61/dd/80d8e5e7ff9b911a52d6e81b6611e31a37fe1d434fee5a50a1c4e2f337c8/morie-0.9.5.3.tar.gz"
+  sha256 "e38e365df1558805b7de1671c48b7d685ec2fae95c9ba21a1a9477a9147d62e6"
   license "AGPL-3.0-or-later"
 
   depends_on "python@3.12"
