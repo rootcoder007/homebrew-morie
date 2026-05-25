@@ -7,7 +7,8 @@ Open Research and Inferential Estimation.
 
 ```sh
 brew tap rootcoder007/morie
-brew install morie
+brew install morie    # full Python+R toolkit
+brew install rmorie   # R-only lite version
 ```
 
 ## Upgrade
@@ -50,7 +51,8 @@ morie is in pre-alpha. The first alpha milestone is v1.0.0; everything below is 
 This tap is the canonical install channel through the v0.x pre-alpha
 window. After v1.0.0 ships on PyPI we'll attempt to upstream the
 formula to **`homebrew-core`** so users can drop the tap step entirely
-(`brew install morie`, no `brew tap` first, no `rootcoder007/morie/morie`
+(`brew install morie    # full Python+R toolkit
+brew install rmorie   # R-only lite version`, no `brew tap` first, no `rootcoder007/morie/morie`
 in the upgrade-banner display).
 
 The submission pipeline when v1.0.0 lands:
