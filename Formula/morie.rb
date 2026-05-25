@@ -2,7 +2,7 @@ class Morie < Formula
   include Language::Python::Virtualenv
 
   desc "Multi-domain scientific computing toolkit with the MRM framework"
-  homepage "https://hadesllm.github.io/morie/"
+  homepage "https://rootcoder007.github.io/morie/"
   url "https://files.pythonhosted.org/packages/f2/35/7f2e4b1b410be3f641351a7c5e88157996917a8240e06dddcd62be4857e9/morie-0.9.5.4.tar.gz"
   sha256 "b33e1a117a1909286510955d587e17a5c3b6de1f25c519ae1b6c2e0b9285b7ee"
   license "AGPL-3.0-or-later"

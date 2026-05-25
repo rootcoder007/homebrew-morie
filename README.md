@@ -1,12 +1,12 @@
 # homebrew-morie
 
-Homebrew tap for [morie](https://hadesllm.github.io/morie/) — Multi-domain
+Homebrew tap for [morie](https://rootcoder007.github.io/morie/) — Multi-domain
 Open Research and Inferential Estimation.
 
 ## Install
 
 ```sh
-brew tap hadesllm/morie
+brew tap rootcoder007/morie
 brew install morie
 ```
 
@@ -29,28 +29,28 @@ brew upgrade morie
 
 | Channel | Command |
 | --- | --- |
-| One-liner (no pip/python needed) | `curl -fsSL https://hadesllm.github.io/morie/install.sh \| bash` |
+| One-liner (no pip/python needed) | `curl -fsSL https://rootcoder007.github.io/morie/install.sh \| bash` |
 | PyPI | `pip install morie` |
-| r-universe (R) | `install.packages('morie', repos='https://hadesllm.r-universe.dev')` |
-| Docker (GHCR) | `docker run --rm ghcr.io/hadesllm/morie:latest morie --help` |
+| r-universe (R) | `install.packages('morie', repos='https://rootcoder007.r-universe.dev')` |
+| Docker (GHCR) | `docker run --rm ghcr.io/rootcoder007/morie:latest morie --help` |
 
 ## See also
 
-- **Main repo**: [`hadesllm/morie`](https://github.com/hadesllm/morie) — Python + R source, JSS papers, install.sh
-- **Docs site**: [hadesllm.github.io/morie](https://hadesllm.github.io/morie/) — Sphinx-rendered reference, quick start, methods
+- **Main repo**: [`rootcoder007/morie`](https://github.com/rootcoder007/morie) — Python + R source, JSS papers, install.sh
+- **Docs site**: [rootcoder007.github.io/morie](https://rootcoder007.github.io/morie/) — Sphinx-rendered reference, quick start, methods
 - **PyPI**: [pypi.org/project/morie](https://pypi.org/project/morie/) — the upstream source distribution this formula pulls from
-- **r-universe**: [hadesllm.r-universe.dev/morie](https://hadesllm.r-universe.dev/morie) — R-package nightly binary builds
+- **r-universe**: [rootcoder007.r-universe.dev/morie](https://rootcoder007.r-universe.dev/morie) — R-package nightly binary builds
 
 ## Pre-alpha (v0.x)
 
-morie is in pre-alpha. The first alpha milestone is v1.0.0; everything below is point releases of pre-alpha code. APIs and findings may shift between minor versions. See the [main repo's papers/](https://github.com/hadesllm/morie/tree/main/papers) for the empirical work behind each release.
+morie is in pre-alpha. The first alpha milestone is v1.0.0; everything below is point releases of pre-alpha code. APIs and findings may shift between minor versions. See the [main repo's papers/](https://github.com/rootcoder007/morie/tree/main/papers) for the empirical work behind each release.
 
 ## Homebrew-core roadmap (post-v1.0.0)
 
 This tap is the canonical install channel through the v0.x pre-alpha
 window. After v1.0.0 ships on PyPI we'll attempt to upstream the
 formula to **`homebrew-core`** so users can drop the tap step entirely
-(`brew install morie`, no `brew tap` first, no `hadesllm/morie/morie`
+(`brew install morie`, no `brew tap` first, no `rootcoder007/morie/morie`
 in the upgrade-banner display).
 
 The submission pipeline when v1.0.0 lands:
