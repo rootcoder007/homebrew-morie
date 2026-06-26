@@ -3,8 +3,8 @@ class Morie < Formula
 
   desc "Multi-domain scientific computing toolkit with the MRM framework"
   homepage "https://rootcoder007.github.io/morie/"
-  url "https://files.pythonhosted.org/packages/f2/35/7f2e4b1b410be3f641351a7c5e88157996917a8240e06dddcd62be4857e9/morie-0.9.5.4.tar.gz"
-  sha256 "b33e1a117a1909286510955d587e17a5c3b6de1f25c519ae1b6c2e0b9285b7ee"
+  url "https://files.pythonhosted.org/packages/6c/1a/618e00a8517b93c04409283c3e47603c7befd08812fa73ea7f0c72a1e280/morie-0.9.5.13.tar.gz"
+  sha256 "40c240a8151c72ce181d9475693c5c43ef83379618cb6e35b983af9e060a9b54"
   license "AGPL-3.0-or-later"
 
   # Live PyPI version probe. Without this, `brew livecheck` falls back
