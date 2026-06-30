@@ -1,55 +1,64 @@
 # typed: false
 # frozen_string_literal: true
 
-# rmorie -- R-only lite version of MORIE.
+# rmorie -- R-only version of MORIE.
 #
-# This formula installs the rmorie R package into the system R library
-# via `R CMD INSTALL`. Requires r-base to be installed first (declared
-# as a hard dependency).
+# Installs the rmorie R package -- and its full dependency tree -- into R's
+# site-library via `install.packages()` from r-universe. rmorie is not on CRAN,
+# and its hard deps include the r-universe-only rmoriebricklayer (Imports +
+# LinkingTo) and rmoriedata; install.packages from r-universe resolves the whole
+# graph (CRAN deps + r-universe deps) in one shot. Requires r (declared below).
 #
-# Source comes from r-universe rather than CRAN because rmorie is not
-# yet on CRAN -- the r-universe build is the authoritative binary.
+# The `url` pins an immutable github commit archive so brew has a stable,
+# checksummed download; livecheck tracks the live r-universe version since rmorie
+# publishes no GitHub releases/tags.
 class Rmorie < Formula
-  desc "MORIE Toolkit (R-only lite version, CRAN+rOpenSci focused)"
+  desc "MORIE Toolkit (R-only version, CRAN+rOpenSci focused)"
   homepage "https://github.com/rootcoder007/rmorie"
-  url "https://github.com/rootcoder007/rmorie/archive/refs/tags/v0.9.5.12.tar.gz"
-  version "0.9.5.12"
-  sha256 :no_check # filled in when the first tag lands; remove on first release
+  url "https://github.com/rootcoder007/rmorie/archive/83bba959d30ca80623e55092f1cc3eea7f9c3171.tar.gz"
+  version "0.9.9"
+  sha256 "82b2625bf5576afd53464937814694eeeff678e758161cfad749109ff704a37f"
   license "AGPL-3.0-or-later"
   head "https://github.com/rootcoder007/rmorie.git", branch: "main"
 
   livecheck do
-    url "https://api.github.com/repos/rootcoder007/rmorie/releases/latest"
+    url "https://rootcoder007.r-universe.dev/api/packages/rmorie"
     strategy :json do |json|
-      json["tag_name"]&.delete_prefix("v")
+      json["Version"]
     end
   end
 
-  # System libraries the C++ backend links against.
+  # System libraries the C++ backend links against (morie_http.cpp uses libcurl).
+  depends_on "curl"
   depends_on "libsodium"
   depends_on "openssl@3"
   depends_on "r"
 
   def install
-    # Build the source tarball + install into R's site-library.
-    system "R", "CMD", "build", ".", "--no-build-vignettes", "--no-manual"
-    tarball = Dir["rmorie_*.tar.gz"].first
-    odie "no tarball produced" unless tarball
-
-    # Install into R's user-library (don't touch system R library).
-    r_user_lib = `R RHOME`.chomp + "/site-library"
-    ENV["R_LIBS_USER"] = r_user_lib
-    mkdir_p r_user_lib
-
-    system "R", "CMD", "INSTALL",
-           "--library=#{r_user_lib}",
-           "--no-test-load",
-           "--no-help",
-           tarball
+    # Resolve + install rmorie and its full dependency tree from r-universe
+    # (CRAN deps like Rcpp/RcppArmadillo AND the r-universe-only
+    # rmoriebricklayer / rmoriedata) into R's site-library, so a user's
+    # `library(rmorie)` works. r-universe serves a prebuilt binary on macOS.
+    site_lib = `R RHOME`.chomp + "/site-library"
+    ENV["R_LIBS_USER"] = site_lib
+    mkdir_p site_lib
+    (buildpath/"install.R").write <<~R
+      install.packages(
+        "rmorie",
+        repos = c("https://rootcoder007.r-universe.dev",
+                  "https://cloud.r-project.org"),
+        lib  = "#{site_lib}",
+        dependencies = c("Depends", "Imports", "LinkingTo")
+      )
+      if (!requireNamespace("rmorie", lib.loc = "#{site_lib}", quietly = TRUE)) {
+        stop("rmorie failed to install")
+      }
+    R
+    system "R", "--vanilla", "--no-echo", "-f", buildpath/"install.R"
   end
 
   test do
-    # Smoke-load the package and call a simple exported function.
+    # Smoke-load the package and confirm the version is reported.
     (testpath/"smoke.R").write <<~R
       library(rmorie)
       stopifnot(is.character(packageVersion("rmorie")) ||
