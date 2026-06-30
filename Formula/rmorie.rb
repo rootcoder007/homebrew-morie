@@ -28,7 +28,8 @@ class Rmorie < Formula
     end
   end
 
-  # System libraries the C++ backend links against.
+  # System libraries the C++ backend links against (morie_http.cpp uses libcurl).
+  depends_on "curl"
   depends_on "libsodium"
   depends_on "openssl@3"
   depends_on "r"
