@@ -6,16 +6,23 @@ Open Research and Inferential Estimation.
 ## Install
 
 ```sh
-brew tap rootcoder007/morie
-brew install morie    # full Python+R toolkit
-brew install rmorie   # R-only lite version
+brew install rootcoder007/morie/morie    # full Python+R toolkit
+brew install rootcoder007/morie/rmorie   # R-only lite version
 ```
+
+> **Use the fully-qualified name** (`rootcoder007/morie/morie`). No separate
+> `brew tap` step is needed, and it treats the install as an explicit,
+> intentional action — the cleanest way around the per-machine "untrusted
+> tap" prompt. Third-party taps **cannot** be marked globally trusted (Tap
+> Trust is stored locally in each user's `~/.homebrew/trust.json`); only
+> formulae accepted into `homebrew-core` are trusted by default (see the
+> Homebrew-core roadmap below).
 
 ## Upgrade
 
 ```sh
 brew update
-brew upgrade morie
+brew upgrade rootcoder007/morie/morie
 ```
 
 ## What you get
