@@ -1,0 +1,102 @@
+name: Auto-bump on new morie tag
+
+# Watches PyPI (rootcoder007/morie) for new vX.Y.Z releases and auto-PRs a formula
+# bump.  Saves the manual sha256 + url update that currently happens
+# on every release.
+#
+# Trigger: scheduled hourly + manual workflow_dispatch.
+# Source of truth: https://pypi.org/pypi/morie/json -> info.version.
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # hourly at :17 to avoid the every-hour rush
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tap
+        uses: actions/checkout@v4
+
+      - name: Find latest morie version on PyPI
+        id: pypi
+        run: |
+          set -euo pipefail
+          # PyPI's JSON is authoritative — morie publishes there before
+          # the tap ever needs to know.
+          info=$(curl -fsSL https://pypi.org/pypi/morie/json)
+          latest=$(echo "$info" | python3 -c "import sys, json; print(json.load(sys.stdin)['info']['version'])")
+          # Find the sdist sha256
+          sdist=$(echo "$info" | python3 - "$latest" <<'PY'
+          import json, sys
+          d = json.load(open(0))
+          v = sys.argv[1]
+          # Use the per-version urls block to get the sdist tarball
+          import urllib.request
+          ver = json.loads(urllib.request.urlopen(f"https://pypi.org/pypi/morie/{v}/json").read())
+          for u in ver['urls']:
+              if u['packagetype'] == 'sdist':
+                  print(u['url']); print(u['digests']['sha256'])
+                  break
+          PY
+          )
+          url=$(echo "$sdist" | sed -n '1p')
+          sha=$(echo "$sdist" | sed -n '2p')
+          echo "version=$latest" >> "$GITHUB_OUTPUT"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "PyPI latest = $latest"
+
+      - name: Read formula version
+        id: tap
+        run: |
+          set -euo pipefail
+          ver=$(grep -oE 'morie-[0-9]+\.[0-9]+\.[0-9]+' Formula/morie.rb | head -1 | sed 's/morie-//')
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "Tap currently at $ver"
+
+      - name: Bail if up-to-date
+        if: steps.pypi.outputs.version == steps.tap.outputs.version
+        run: |
+          echo "Tap already at v${{ steps.pypi.outputs.version }}; nothing to do."
+          exit 0
+
+      - name: Patch formula
+        if: steps.pypi.outputs.version != steps.tap.outputs.version
+        run: |
+          set -euo pipefail
+          NEW_URL="${{ steps.pypi.outputs.url }}"
+          NEW_SHA="${{ steps.pypi.outputs.sha }}"
+          # Replace the url + sha256 lines.  Anchor on the leading
+          # whitespace so we don't accidentally patch the resource:
+          # blocks below (we don't ship resources, but defence-in-depth).
+          python3 <<PY
+          import pathlib, re
+          p = pathlib.Path("Formula/morie.rb")
+          s = p.read_text()
+          s = re.sub(r'(\n\s*url\s+)"[^"]*"', r'\1"${NEW_URL}"', s, count=1)
+          s = re.sub(r'(\n\s*sha256\s+)"[^"]*"', r'\1"${NEW_SHA}"', s, count=1)
+          p.write_text(s)
+          PY
+
+      - name: Open PR with bump
+        if: steps.pypi.outputs.version != steps.tap.outputs.version
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "formula: bump morie -> ${{ steps.pypi.outputs.version }}"
+          branch: auto-bump/v${{ steps.pypi.outputs.version }}
+          title: "formula: bump morie -> ${{ steps.pypi.outputs.version }}"
+          body: |
+            Auto-bump from PyPI.
+
+            - Old: ${{ steps.tap.outputs.version }}
+            - New: ${{ steps.pypi.outputs.version }}
+            - URL: ${{ steps.pypi.outputs.url }}
+            - sha256: `${{ steps.pypi.outputs.sha }}`
+
+            See https://pypi.org/project/morie/${{ steps.pypi.outputs.version }}/.
