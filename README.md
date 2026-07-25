@@ -6,17 +6,21 @@ Open Research and Inferential Estimation.
 ## Install
 
 ```sh
-brew install rootcoder007/morie/morie    # full Python+R toolkit
-brew install rootcoder007/morie/rmorie   # R-only lite version
+brew tap rootcoder007/morie
+brew trust rootcoder007/morie            # Homebrew 6.0+ only (see note)
+brew install morie                       # full Python+R toolkit
+brew install rmorie                      # R-only lite version
 ```
 
-> **Use the fully-qualified name** (`rootcoder007/morie/morie`). No separate
-> `brew tap` step is needed, and it treats the install as an explicit,
-> intentional action — the cleanest way around the per-machine "untrusted
-> tap" prompt. Third-party taps **cannot** be marked globally trusted (Tap
-> Trust is stored locally in each user's `~/.homebrew/trust.json`); only
-> formulae accepted into `homebrew-core` are trusted by default (see the
-> Homebrew-core roadmap below).
+> **The `brew trust` step is expected — not a warning about morie.** Since
+> Homebrew 6.0, *every* third-party tap is untrusted by default — including
+> major vendors like `mongodb/brew`, `heroku/brew`, and `hashicorp/tap`.
+> Homebrew trusts only formulae in `homebrew-core`; being outside it says
+> nothing about a tap's legitimacy. `brew trust` records your one-time consent
+> in `~/.homebrew/trust.json` (per machine — it cannot be set globally by a tap
+> author). On Homebrew ≤ 5.x there is no trust step; just `brew install`.
+> Once morie lands in `homebrew-core` (roadmap below) the tap and trust steps
+> disappear entirely.
 
 ## Upgrade
 
@@ -49,22 +53,21 @@ brew upgrade rootcoder007/morie/morie
 - **PyPI**: [pypi.org/project/morie](https://pypi.org/project/morie/) — the upstream source distribution this formula pulls from
 - **r-universe**: [rootcoder007.r-universe.dev/morie](https://rootcoder007.r-universe.dev/morie) — R-package nightly binary builds
 
-## Pre-alpha (v0.x)
+## Release status
 
-morie is in pre-alpha. The first alpha milestone is v1.0.0; everything below is point releases of pre-alpha code. APIs and findings may shift between minor versions. See the [main repo's papers/](https://github.com/rootcoder007/morie/tree/main/papers) for the empirical work behind each release.
+morie is a stable 1.x release (1.1.6 on PyPI). As active research software, empirical findings and some APIs may still evolve between minor versions — see the [main repo's papers/](https://github.com/rootcoder007/morie/tree/main/papers) for the work behind each release.
 
-## Homebrew-core roadmap (post-v1.0.0)
+## Homebrew-core roadmap
 
-This tap is the canonical install channel through the v0.x pre-alpha
-window. After v1.0.0 ships on PyPI we'll attempt to upstream the
-formula to **`homebrew-core`** so users can drop the tap step entirely
-(`brew install morie    # full Python+R toolkit
-brew install rmorie   # R-only lite version`, no `brew tap` first, no `rootcoder007/morie/morie`
-in the upgrade-banner display).
+morie is past 1.0.0 (1.1.6 live on PyPI), so it already clears
+homebrew-core's stable-release bar. This tap is the canonical channel
+today; the plan is to upstream the formula to **`homebrew-core`** so
+users can drop the tap step entirely (`brew install morie`, no
+`brew tap` first, no `brew trust`).
 
-The submission pipeline when v1.0.0 lands:
+The submission pipeline:
 
-1. Tag `v1.0.0` on the main morie repo + push to PyPI.
+1. Confirm the current `vX.Y.Z` tag on the main morie repo is on PyPI.
 2. Generate the explicit Python `resource` blocks via
    `brew update-python-resources --print-only morie`
    (or [`homebrew-pypi-poet`](https://github.com/tdsmith/homebrew-pypi-poet)
