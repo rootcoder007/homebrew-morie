@@ -26,31 +26,35 @@ jobs:
       - name: Find latest morie version on PyPI
         id: pypi
         run: |
-          set -euo pipefail
-          # PyPI's JSON is authoritative — morie publishes there before
-          # the tap ever needs to know.
-          info=$(curl -fsSL https://pypi.org/pypi/morie/json)
-          latest=$(echo "$info" | python3 -c "import sys, json; print(json.load(sys.stdin)['info']['version'])")
-          # Find the sdist sha256
-          sdist=$(echo "$info" | python3 - "$latest" <<'PY'
-          import json, sys
-          d = json.load(open(0))
-          v = sys.argv[1]
-          # Use the per-version urls block to get the sdist tarball
-          import urllib.request
-          ver = json.loads(urllib.request.urlopen(f"https://pypi.org/pypi/morie/{v}/json").read())
-          for u in ver['urls']:
-              if u['packagetype'] == 'sdist':
-                  print(u['url']); print(u['digests']['sha256'])
+          # One robust fetch. The old shell pipeline (curl | python | sed) died
+          # on SIGPIPE ("echo: write error: Broken pipe") and made a redundant
+          # per-version request that intermittently returned empty JSON. PyPI's
+          # top-level /pypi/morie/json already carries the latest release's files
+          # under `urls`, so a single request + retry is enough.
+          python3 - "$GITHUB_OUTPUT" <<'PY'
+          import json, sys, time, urllib.request, urllib.error
+          out = sys.argv[1]
+          data = None
+          for attempt in range(3):
+              try:
+                  with urllib.request.urlopen("https://pypi.org/pypi/morie/json", timeout=30) as r:
+                      data = json.load(r)
                   break
+              except (urllib.error.URLError, json.JSONDecodeError) as e:
+                  print(f"PyPI fetch attempt {attempt + 1} failed: {e}", file=sys.stderr)
+                  time.sleep(5)
+          if data is None:
+              raise SystemExit("could not fetch morie metadata from PyPI after 3 tries")
+          version = data["info"]["version"]
+          sdist = next((u for u in data["urls"] if u["packagetype"] == "sdist"), None)
+          if sdist is None:
+              raise SystemExit(f"no sdist tarball published for morie {version}")
+          with open(out, "a") as fh:
+              fh.write(f"version={version}\n")
+              fh.write(f"url={sdist['url']}\n")
+              fh.write(f"sha={sdist['digests']['sha256']}\n")
+          print("PyPI latest =", version)
           PY
-          )
-          url=$(echo "$sdist" | sed -n '1p')
-          sha=$(echo "$sdist" | sed -n '2p')
-          echo "version=$latest" >> "$GITHUB_OUTPUT"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "PyPI latest = $latest"
 
       - name: Read formula version
         id: tap
