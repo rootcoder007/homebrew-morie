@@ -15,8 +15,8 @@
 class Rmorie < Formula
   desc "Observational inference in R: causal effects, surveys, space-time models"
   homepage "https://rootcoder007.github.io/rmorie/"
-  url "https://github.com/rootcoder007/rmorie/archive/refs/tags/v1.4.3.tar.gz"
-  sha256 "fb025dd620c40d28bd574f1eee1c441f5cec7a19c77d3407fe744269e8c70194"
+  url "https://github.com/rootcoder007/rmorie/archive/refs/tags/v1.4.4.tar.gz"
+  sha256 "de187a26dbbbc98a1cf2785efd353773ea091e080a00b85c388e8e92467c9a41"
   license "AGPL-3.0-or-later"
   head "https://github.com/rootcoder007/rmorie.git", branch: "main"
 

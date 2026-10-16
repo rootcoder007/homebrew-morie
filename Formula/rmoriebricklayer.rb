@@ -14,8 +14,8 @@
 class Rmoriebricklayer < Formula
   desc "Reproducible data capsules for R with SHA-256 provenance and fallback"
   homepage "https://rootcoder007.github.io/rmorie-bricklayer/"
-  url "https://github.com/rootcoder007/rmorie-bricklayer/archive/refs/tags/v0.5.13.tar.gz"
-  sha256 "19645848627ebe0c3d8b26fbd192f331bda962b2eea9a779d5c9567320bc5158"
+  url "https://github.com/rootcoder007/rmorie-bricklayer/archive/refs/tags/v0.5.14.tar.gz"
+  sha256 "cd9a00540797c0497dfe8034e0d3d404ce2b34dc3b89d8047959c6d17c487ecf"
   license "AGPL-3.0-only"
   head "https://github.com/rootcoder007/rmorie-bricklayer.git", branch: "main"
 
