@@ -1,23 +1,22 @@
 # typed: false
 # frozen_string_literal: true
 
-# rmorie -- R-only version of MORIE.
+# rmorie -- the MORIE statistical toolkit for R, with a command line inside the
+# package (rmorie::install_cli()). rmorie is not on CRAN; it and its
+# r-universe-only dependencies install from r-universe.
 #
-# Installs the rmorie R package -- and its full dependency tree -- into R's
-# site-library via `install.packages()` from r-universe. rmorie is not on CRAN,
-# and its hard deps include the r-universe-only rmoriebricklayer (Imports +
-# LinkingTo) and rmoriedata; install.packages from r-universe resolves the whole
-# graph (CRAN deps + r-universe deps) in one shot. Requires r (declared below).
-#
-# The `url` pins an immutable github commit archive so brew has a stable,
-# checksummed download; livecheck tracks the live r-universe version since rmorie
-# publishes no GitHub releases/tags.
+# The package is installed into this formula's keg under lib/R/<R x.y>/site-library,
+# which `brew link` exposes in Homebrew R's site library
+# ($(brew --prefix)/lib/R/<R x.y>/site-library), so `library(rmorie)` works in
+# Homebrew's R. Dependencies already in that library are reused. After a minor R
+# upgrade (for example 4.6 to 4.7), run `brew reinstall rmorie`.
+# The `url` pins the signed release tag's archive so brew has a stable,
+# checksummed download; livecheck tracks the live r-universe version.
 class Rmorie < Formula
-  desc "MORIE Toolkit (R-only version, CRAN+rOpenSci focused)"
-  homepage "https://github.com/rootcoder007/rmorie"
-  url "https://github.com/rootcoder007/rmorie/archive/83bba959d30ca80623e55092f1cc3eea7f9c3171.tar.gz"
-  version "0.9.9"
-  sha256 "82b2625bf5576afd53464937814694eeeff678e758161cfad749109ff704a37f"
+  desc "Observational inference in R: causal effects, surveys, space-time models"
+  homepage "https://rootcoder007.github.io/rmorie/"
+  url "https://github.com/rootcoder007/rmorie/archive/refs/tags/v1.4.3.tar.gz"
+  sha256 "fb025dd620c40d28bd574f1eee1c441f5cec7a19c77d3407fe744269e8c70194"
   license "AGPL-3.0-or-later"
   head "https://github.com/rootcoder007/rmorie.git", branch: "main"
 
@@ -28,43 +27,61 @@ class Rmorie < Formula
     end
   end
 
-  # System libraries the C++ backend links against (morie_http.cpp uses libcurl).
   depends_on "curl"
   depends_on "libsodium"
-  depends_on "openssl@3"
   depends_on "r"
+  depends_on "rootcoder007/morie/rmoriebricklayer"
+  depends_on "rootcoder007/morie/rmoriedata"
+
+  def r_site_library
+    "R/#{Formula["r"].version.major_minor}/site-library"
+  end
 
   def install
-    # Resolve + install rmorie and its full dependency tree from r-universe
-    # (CRAN deps like Rcpp/RcppArmadillo AND the r-universe-only
-    # rmoriebricklayer / rmoriedata) into R's site-library, so a user's
-    # `library(rmorie)` works. r-universe serves a prebuilt binary on macOS.
-    site_lib = `R RHOME`.chomp + "/site-library"
-    ENV["R_LIBS_USER"] = site_lib
-    mkdir_p site_lib
+    keg_lib = lib/r_site_library
+    keg_lib.mkpath
+    # Build the release source that Homebrew downloaded and checksummed. Sibling MORIE
+    # packages come from their own formulas' kegs; any CRAN package still missing is
+    # installed into this keg first.
     (buildpath/"install.R").write <<~R
-      install.packages(
-        "rmorie",
-        repos = c("https://rootcoder007.r-universe.dev",
-                  "https://cloud.r-project.org"),
-        lib  = "#{site_lib}",
-        dependencies = c("Depends", "Imports", "LinkingTo")
-      )
-      if (!requireNamespace("rmorie", lib.loc = "#{site_lib}", quietly = TRUE)) {
-        stop("rmorie failed to install")
+      options(timeout = max(3600, getOption("timeout")))
+      keg <- "#{keg_lib}"
+      shared <- "#{HOMEBREW_PREFIX/"lib"/r_site_library}"
+      siblings <- c("#{formula_opt_lib("rootcoder007/morie/rmoriebricklayer")/r_site_library}", "#{formula_opt_lib("rootcoder007/morie/rmoriedata")/r_site_library}")
+      .libPaths(c(keg, siblings[dir.exists(siblings)], if (dir.exists(shared)) shared))
+      desc <- read.dcf("DESCRIPTION")
+      fields <- intersect(c("Depends", "Imports", "LinkingTo"), colnames(desc))
+      wanted <- unlist(strsplit(gsub("[(][^)]*[)]", "", desc[1, fields]), "[,[:space:]]+"))
+      wanted <- setdiff(wanted[nzchar(wanted)], c("R", rownames(installed.packages(priority = "base"))))
+      missing <- setdiff(wanted, rownames(installed.packages(lib.loc = .libPaths())))
+      if (length(missing)) {
+        install.packages(missing, repos = "https://cloud.r-project.org", lib = keg,
+                         dependencies = c("Depends", "Imports", "LinkingTo"))
       }
+      install.packages(".", repos = NULL, type = "source", lib = keg)
+      got <- tryCatch(packageDescription("rmorie", lib.loc = keg)$Version, error = function(e) NA)
+      if (!identical(got, "#{version}")) stop("rmorie #{version} did not install into the keg (found: ", got, ")")
     R
-    system "R", "--vanilla", "--no-echo", "-f", buildpath/"install.R"
+    system formula_opt_bin("r")/"R", "--vanilla", "--no-echo", "-f", buildpath/"install.R"
+  end
+
+  def caveats
+    <<~EOS
+      rmorie is linked into Homebrew R's site library:
+        #{HOMEBREW_PREFIX}/lib/R/#{Formula["r"].version.major_minor}/site-library
+      If rmorie was installed there before with install.packages(), `brew link`
+      reports a conflict. Remove the old copy first, in Homebrew's R:
+        remove.packages("rmorie")
+      or let Homebrew replace it:
+        brew link --overwrite rmorie
+    EOS
   end
 
   test do
-    # Smoke-load the package and confirm the version is reported.
     (testpath/"smoke.R").write <<~R
       library(rmorie)
-      stopifnot(is.character(packageVersion("rmorie")) ||
-                is.numeric_version(packageVersion("rmorie")))
       cat("rmorie", as.character(packageVersion("rmorie")), "OK\\n")
     R
-    system "R", "--vanilla", "--no-echo", "-f", testpath/"smoke.R"
+    assert_match "rmorie #{version} OK", shell_output("#{formula_opt_bin("r")}/Rscript --vanilla #{testpath}/smoke.R")
   end
 end

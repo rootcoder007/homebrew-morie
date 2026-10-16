@@ -8,8 +8,10 @@ Open Research and Inferential Estimation.
 ```sh
 brew tap rootcoder007/morie
 brew trust rootcoder007/morie            # Homebrew 6.0+ only (see note)
-brew install morie                       # full Python+R toolkit
-brew install rmorie                      # R-only lite version
+brew install morie                       # Python: the morie CLI and library
+brew install rmorie                      # R: rmorie (brings its R dependencies)
+brew install rmoriebricklayer            # R: reproducible data capsules
+brew install rmoriedata                  # R: offline dataset snapshots
 ```
 
 > **The `brew trust` step is expected — not a warning about morie.** Since
@@ -31,11 +33,13 @@ brew upgrade rootcoder007/morie/morie
 
 ## What you get
 
-- The `morie` CLI on your PATH.
-- A self-contained Python 3.12 virtualenv at
-  `$(brew --prefix)/opt/morie/libexec` with the full scientific stack
-  (pandas, numpy, scipy, scikit-learn, statsmodels, DoubleML).
-- Pure-Python install — no compilers required on your machine.
+- `morie`: the `morie` command on your PATH and the Python package in a
+  self-contained Python 3.12 virtualenv at `$(brew --prefix)/opt/morie/libexec`.
+  morie has no NumPy or pandas dependency, so no compilers are needed.
+- `rmorie`, `rmoriebricklayer`, `rmoriedata`: the R packages, installed from
+  [r-universe](https://rootcoder007.r-universe.dev) into the site library of
+  Homebrew's R, so `library(rmorie)` works in any R session that uses it.
+  r-universe serves prebuilt macOS binaries.
 
 ## Alternatives
 
@@ -43,7 +47,7 @@ brew upgrade rootcoder007/morie/morie
 | --- | --- |
 | One-liner (no pip/python needed) | `curl -fsSL https://rootcoder007.github.io/morie/install.sh \| bash` |
 | PyPI | `pip install morie` |
-| r-universe (R) | `install.packages('morie', repos='https://rootcoder007.r-universe.dev')` |
+| r-universe (R) | `install.packages('rmorie', repos = c('https://rootcoder007.r-universe.dev', 'https://cloud.r-project.org'))` |
 | Docker (GHCR) | `docker run --rm ghcr.io/rootcoder007/morie:latest morie --help` |
 
 ## See also
@@ -51,15 +55,15 @@ brew upgrade rootcoder007/morie/morie
 - **Main repo**: [`rootcoder007/morie`](https://github.com/rootcoder007/morie) — Python + R source, JSS papers, install.sh
 - **Docs site**: [rootcoder007.github.io/morie](https://rootcoder007.github.io/morie/) — Sphinx-rendered reference, quick start, methods
 - **PyPI**: [pypi.org/project/morie](https://pypi.org/project/morie/) — the upstream source distribution this formula pulls from
-- **r-universe**: [rootcoder007.r-universe.dev/morie](https://rootcoder007.r-universe.dev/morie) — R-package nightly binary builds
+- **r-universe**: [rootcoder007.r-universe.dev](https://rootcoder007.r-universe.dev) — rmorie, rmoriebricklayer and rmoriedata, with binaries
 
 ## Release status
 
-morie is a stable 1.x release (1.1.6 on PyPI). As active research software, empirical findings and some APIs may still evolve between minor versions — see the [main repo's papers/](https://github.com/rootcoder007/morie/tree/main/papers) for the work behind each release.
+morie and rmorie are stable 1.x releases (1.4.3 on PyPI and r-universe). As active research software, empirical findings and some APIs may still evolve between minor versions — see the [main repo's papers/](https://github.com/rootcoder007/morie/tree/main/papers) for the work behind each release.
 
 ## Homebrew-core roadmap
 
-morie is past 1.0.0 (1.1.6 live on PyPI), so it already clears
+morie is past 1.0.0 (1.4.3 live on PyPI), so it already clears
 homebrew-core's stable-release bar. This tap is the canonical channel
 today; the plan is to upstream the formula to **`homebrew-core`** so
 users can drop the tap step entirely (`brew install morie`, no

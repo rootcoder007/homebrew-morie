@@ -23,18 +23,16 @@ class Morie < Formula
 
   depends_on "python@3.12"
 
-  # Heavy runtime dependencies are resolved by pip at install time inside
-  # the venv. This is the documented pattern for Python applications that
-  # depend on the SciPy stack -- fully pinning resources here would mean
-  # tracking ~30+ wheels through every numpy/pandas point release.
+  # Runtime dependencies are resolved by pip at install time inside the
+  # venv. morie's core needs only a few pure-Python packages (httpx, rich,
+  # openpyxl, beautifulsoup4); numerical kernels are built in, with no NumPy
+  # or pandas dependency.
   #
   # We invoke `python -m pip` (not `pip` directly) because Homebrew's
   # virtualenv_create writes a pip launcher whose shebang can point at a
   # path that doesn't yet exist when pip runs from the formula sandbox,
   # silently failing the install.  `python -m pip` uses the venv's
-  # python directly and resolves morie's declared dependencies
-  # (numpy / pandas / scipy / scikit-learn / statsmodels / DoubleML /
-  # matplotlib / httpx / ...) from PyPI.
+  # python directly and resolves morie's declared dependencies from PyPI.
   #
   # `--no-binary=ast_serialize` forces a source build of the
   # ast_serialize wheel, which otherwise ships with an install_name
