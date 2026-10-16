@@ -1,0 +1,50 @@
+# Install every formula on a clean macOS runner and run its `brew test`.
+# A formula passes only when `brew install` (build, keg, link) and `brew test` both exit 0;
+# a developer machine cannot show this, because packages already installed into Homebrew R's
+# site library there make `brew link` refuse and let `library()` load the wrong copy.
+name: tests
+
+on:
+  push:
+    branches: [main]
+    paths: ["Formula/**", ".github/workflows/tests.yml"]
+  pull_request:
+    paths: ["Formula/**", ".github/workflows/tests.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  formula:
+    name: ${{ matrix.formula }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]
+        formula: [morie, rmoriebricklayer, rmoriedata, rmorie]
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tap this checkout
+        run: |
+          brew tap rootcoder007/morie "$GITHUB_WORKSPACE"
+          brew tap-info rootcoder007/morie
+
+      - name: Audit
+        run: brew audit --strict rootcoder007/morie/${{ matrix.formula }}
+
+      - name: Install
+        run: brew install --verbose rootcoder007/morie/${{ matrix.formula }}
+
+      - name: Test
+        run: brew test --verbose rootcoder007/morie/${{ matrix.formula }}
+
+      - name: Installed version
+        run: brew list --versions rootcoder007/morie/${{ matrix.formula }}
