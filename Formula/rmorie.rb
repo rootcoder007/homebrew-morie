@@ -33,6 +33,11 @@ class Rmorie < Formula
   depends_on "rootcoder007/morie/rmoriebricklayer"
   depends_on "rootcoder007/morie/rmoriedata"
 
+  # A copy of rmorie that install.packages() put in Homebrew R's site library (any R x.y)
+  # is replaced when this formula links, instead of failing the link; files that belong
+  # to another formula's keg are never touched. Same mechanism as python@3.x and pip.
+  link_overwrite "lib/R/*/site-library/rmorie/*"
+
   def r_site_library
     "R/#{Formula["r"].version.major_minor}/site-library"
   end
@@ -69,11 +74,8 @@ class Rmorie < Formula
     <<~EOS
       rmorie is linked into Homebrew R's site library:
         #{HOMEBREW_PREFIX}/lib/R/#{Formula["r"].version.major_minor}/site-library
-      If rmorie was installed there before with install.packages(), `brew link`
-      reports a conflict. Remove the old copy first, in Homebrew's R:
-        remove.packages("rmorie")
-      or let Homebrew replace it:
-        brew link --overwrite rmorie
+      A copy installed there earlier with install.packages() is replaced by this one.
+      After a minor R upgrade (for example 4.6 to 4.7), run `brew reinstall rmorie`.
     EOS
   end
 

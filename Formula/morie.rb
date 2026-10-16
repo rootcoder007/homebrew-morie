@@ -23,6 +23,10 @@ class Morie < Formula
 
   depends_on "python@3.12"
 
+  # A `morie` launcher that `pip install morie` wrote into Homebrew's bin is replaced when
+  # this formula links, instead of failing the link (as python@3.x does for pip).
+  link_overwrite "bin/morie"
+
   # Runtime dependencies are resolved by pip at install time inside the
   # venv. morie's core needs only a few pure-Python packages (httpx, rich,
   # openpyxl, beautifulsoup4); numerical kernels are built in, with no NumPy
