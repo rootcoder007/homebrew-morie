@@ -4,12 +4,12 @@ name: Auto-bump on new morie tag
 # bump.  Saves the manual sha256 + url update that currently happens
 # on every release.
 #
-# Trigger: scheduled hourly + manual workflow_dispatch.
+# Trigger: scheduled daily + manual workflow_dispatch.
 # Source of truth: https://pypi.org/pypi/morie/json -> info.version.
 
 on:
   schedule:
-    - cron: "17 * * * *"   # hourly at :17 to avoid the every-hour rush
+    - cron: "17 13 * * *"   # daily at 13:17 UTC (9:17 Toronto in summer time)
   workflow_dispatch:
 
 permissions:
@@ -105,7 +105,7 @@ jobs:
 
             See https://pypi.org/project/morie/${{ steps.pypi.outputs.version }}/.
 
-  # The R formulas pin the signed release tag archive on GitHub. Each hour, compare the formula with the
+  # The R formulas pin the signed release tag archive on GitHub. Each day, compare the formula with the
   # latest GitHub release and open a bump PR (url + sha256) when a newer one is out; tests.yml then
   # installs it on macOS before it is merged.
   bump-r:
