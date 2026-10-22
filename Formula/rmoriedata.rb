@@ -14,8 +14,8 @@
 class Rmoriedata < Formula
   desc "Offline snapshots of public datasets for the rmorie R package"
   homepage "https://rootcoder007.github.io/rmoriedata/"
-  url "https://github.com/rootcoder007/rmoriedata/archive/refs/tags/v0.3.7.tar.gz"
-  sha256 "534eb2876d03c9a755af8efb8296a1661296c7b09cc2c98d00031356d1f59a8d"
+  url "https://github.com/rootcoder007/rmoriedata/archive/refs/tags/v0.4.0.tar.gz"
+  sha256 "0e2e7366563bf6958b35aadda71c09f529529526397420ec0e731cba0cc75054"
   license "AGPL-3.0-or-later"
   head "https://github.com/rootcoder007/rmoriedata.git", branch: "main"
 

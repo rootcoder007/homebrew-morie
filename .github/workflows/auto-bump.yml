@@ -104,3 +104,61 @@ jobs:
             - sha256: `${{ steps.pypi.outputs.sha }}`
 
             See https://pypi.org/project/morie/${{ steps.pypi.outputs.version }}/.
+
+  # The R formulas pin the signed release tag archive on GitHub. Each hour, compare the formula with the
+  # latest GitHub release and open a bump PR (url + sha256) when a newer one is out; tests.yml then
+  # installs it on macOS before it is merged.
+  bump-r:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { formula: rmoriebricklayer, repo: rmorie-bricklayer }
+          - { formula: rmoriedata, repo: rmoriedata }
+          - { formula: rmorie, repo: rmorie }
+    steps:
+      - name: Checkout tap
+        uses: actions/checkout@v4
+
+      - name: Compare with the latest release
+        id: rel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=$(gh api "repos/rootcoder007/${{ matrix.repo }}/releases/latest" --jq .tag_name)
+          [[ "$tag" =~ ^v[0-9]+(\.[0-9]+)+$ ]] || { echo "unexpected tag: $tag"; exit 1; }
+          have=$(grep -oE "refs/tags/v[0-9.]+\.tar\.gz" "Formula/${{ matrix.formula }}.rb" | head -1 | sed -E "s#refs/tags/(v[0-9.]+)\.tar\.gz#\1#")
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "have=$have" >> "$GITHUB_OUTPUT"
+          echo "${{ matrix.formula }}: formula $have, latest release $tag"
+
+      - name: Patch formula
+        if: steps.rel.outputs.tag != steps.rel.outputs.have
+        run: |
+          set -euo pipefail
+          url="https://github.com/rootcoder007/${{ matrix.repo }}/archive/refs/tags/${{ steps.rel.outputs.tag }}.tar.gz"
+          a=$(curl -fsSL "$url" | sha256sum | cut -d" " -f1); b=$(curl -fsSL "$url" | sha256sum | cut -d" " -f1)
+          [ "$a" = "$b" ] || { echo "archive checksum changed between two downloads"; exit 1; }
+          python3 - "Formula/${{ matrix.formula }}.rb" "$url" "$a" <<'PY'
+          import pathlib, re, sys
+          path, url, sha = sys.argv[1:]
+          p = pathlib.Path(path); s = p.read_text()
+          s = re.sub(r'(\n\s*url\s+)"[^"]*"', lambda m: m.group(1) + '"' + url + '"', s, count=1)
+          s = re.sub(r'(\n\s*sha256\s+)"[^"]*"', lambda m: m.group(1) + '"' + sha + '"', s, count=1)
+          p.write_text(s)
+          PY
+
+      - name: Open PR with bump
+        if: steps.rel.outputs.tag != steps.rel.outputs.have
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "formula: bump ${{ matrix.formula }} -> ${{ steps.rel.outputs.tag }}"
+          branch: auto-bump/${{ matrix.formula }}-${{ steps.rel.outputs.tag }}
+          title: "formula: bump ${{ matrix.formula }} -> ${{ steps.rel.outputs.tag }}"
+          body: |
+            Auto-bump from the latest GitHub release of rootcoder007/${{ matrix.repo }}.
+
+            - Old: ${{ steps.rel.outputs.have }}
+            - New: ${{ steps.rel.outputs.tag }}
