@@ -63,7 +63,7 @@ morie and rmorie are stable 1.x releases (1.4.4 on PyPI and r-universe). As acti
 
 ## Homebrew-core roadmap
 
-morie is past 1.0.0 (1.4.4 live on PyPI), so it already clears
+morie is past 1.0.0, so it already clears
 homebrew-core's stable-release bar. This tap is the canonical channel
 today; the plan is to upstream the formula to **`homebrew-core`** so
 users can drop the tap step entirely (`brew install morie`, no
