@@ -35,6 +35,9 @@ jobs:
       - name: Tap this checkout
         run: |
           brew tap rootcoder007/morie "$GITHUB_WORKSPACE"
+          # Homebrew 7 loads formulae from a non-official tap only once it is trusted; rmoriedata and
+          # rmorie also load rmoriebricklayer from this tap as a dependency
+          brew trust --tap rootcoder007/morie
           brew tap-info rootcoder007/morie
 
       - name: Audit
