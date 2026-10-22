@@ -59,7 +59,7 @@ brew upgrade rootcoder007/morie/morie
 
 ## Release status
 
-morie and rmorie are stable 1.x releases (1.4.4 on PyPI and r-universe). As active research software, empirical findings and some APIs may still evolve between minor versions — see the [main repo's papers/](https://github.com/rootcoder007/morie/tree/main/papers) for the work behind each release.
+morie and rmorie are stable 1.x releases. As active research software, empirical findings and some APIs may still evolve between minor versions — see the [main repo's papers/](https://github.com/rootcoder007/morie/tree/main/papers) for the work behind each release.
 
 ## Homebrew-core roadmap
 
