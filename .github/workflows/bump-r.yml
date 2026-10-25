@@ -1,0 +1,134 @@
+name: bump R formulas
+
+# Keeps the R formulas on the latest GitHub release of their repositories, url and sha256,
+# committed straight to main once the new formula installs and passes `brew test` on macOS.
+# A release tag that is moved to a new commit keeps its name but changes the archive, so the
+# archive's sha256 is compared too, not only the tag.
+#
+# Triggers: the package repository's release workflow sends a repository_dispatch
+# (event type "release", client_payload {"formula": ...}) on a release or a tag move; the
+# hourly schedule catches anything that event missed; workflow_dispatch runs it by hand.
+
+on:
+  repository_dispatch:
+    types: [release]
+  schedule:
+    - cron: "41 * * * *"
+  workflow_dispatch:
+    inputs:
+      formula:
+        description: "One formula (rmoriebricklayer, rmoriedata, rmorie), or empty for all"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+# one bump at a time: two runs must not push over each other
+concurrency:
+  group: bump-r
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.cmp.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare each formula with its latest release
+        id: cmp
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ONLY: ${{ github.event.client_payload.formula || inputs.formula || '' }}
+        run: |
+          set -euo pipefail
+          changed="[]"
+          while read -r formula repo; do
+            if [ -n "$ONLY" ] && [ "$ONLY" != "$formula" ]; then continue; fi
+            tag=$(gh api "repos/rootcoder007/$repo/releases/latest" --jq .tag_name)
+            [[ "$tag" =~ ^v[0-9]+(\.[0-9]+)+$ ]] || { echo "unexpected tag for $repo: $tag"; exit 1; }
+            url="https://github.com/rootcoder007/$repo/archive/refs/tags/$tag.tar.gz"
+            # two downloads must agree: GitHub builds tag archives on demand
+            a=$(curl -fsSL --retry 3 "$url" | sha256sum | cut -d" " -f1)
+            b=$(curl -fsSL --retry 3 "$url" | sha256sum | cut -d" " -f1)
+            [ "$a" = "$b" ] || { echo "$repo $tag: the archive checksum changed between two downloads"; exit 1; }
+            have_url=$(grep -oE '^\s*url "[^"]+"' "Formula/$formula.rb" | head -1 | sed -E 's/^\s*url "([^"]+)"/\1/')
+            have_sha=$(grep -oE '^\s*sha256 "[0-9a-f]{64}"' "Formula/$formula.rb" | head -1 | grep -oE '[0-9a-f]{64}')
+            echo "$formula: formula $have_url $have_sha; release $url $a"
+            if [ "$have_url" != "$url" ] || [ "$have_sha" != "$a" ]; then
+              changed=$(jq -c --arg f "$formula" --arg t "$tag" --arg u "$url" --arg s "$a" \
+                '. + [{formula: $f, tag: $t, url: $u, sha: $s}]' <<<"$changed")
+            fi
+          done <<'EOF'
+          rmoriebricklayer rmorie-bricklayer
+          rmoriedata rmoriedata
+          rmorie rmorie
+          EOF
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "to bump: $changed"
+
+  bump:
+    needs: check
+    if: needs.check.outputs.changed != '[]'
+    runs-on: macos-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      # one at a time, so each pushes on top of the last
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.check.outputs.changed) }}
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Patch the formula
+        env:
+          F: Formula/${{ matrix.formula }}.rb
+          URL: ${{ matrix.url }}
+          SHA: ${{ matrix.sha }}
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          python3 - "$F" "$URL" "$SHA" <<'PY'
+          import pathlib, re, sys
+          path, url, sha = sys.argv[1:]
+          p = pathlib.Path(path)
+          s = p.read_text()
+          s = re.sub(r'(\n\s*url\s+)"[^"]*"', lambda m: m.group(1) + '"' + url + '"', s, count=1)
+          s = re.sub(r'(\n\s*sha256\s+)"[^"]*"', lambda m: m.group(1) + '"' + sha + '"', s, count=1)
+          p.write_text(s)
+          PY
+          git diff
+
+      - name: Install and test it
+        run: |
+          set -euo pipefail
+          brew tap rootcoder007/morie "$GITHUB_WORKSPACE"
+          brew trust --tap rootcoder007/morie
+          brew audit --strict rootcoder007/morie/${{ matrix.formula }}
+          brew install --verbose rootcoder007/morie/${{ matrix.formula }}
+          brew test --verbose rootcoder007/morie/${{ matrix.formula }}
+          brew list --versions rootcoder007/morie/${{ matrix.formula }}
+
+      - name: Commit to main
+        env:
+          MSG: "formula: ${{ matrix.formula }} ${{ matrix.tag }} (${{ matrix.sha }})"
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then echo "nothing to commit"; exit 0; fi
+          git config user.name "rootcoder007"
+          git config user.email "278967282+rootcoder007@users.noreply.github.com"
+          git commit -am "$MSG"
+          for i in 1 2 3; do
+            git push origin HEAD:main && exit 0
+            git pull --rebase origin main
+          done
+          exit 1
