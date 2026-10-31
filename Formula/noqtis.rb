@@ -5,8 +5,8 @@
 class Noqtis < Formula
   desc "Post-quantum signing, KEMs and sealed input records in C11"
   homepage "https://github.com/rootcoder007/noqtis"
-  url "https://github.com/rootcoder007/noqtis/releases/download/v0.1.1/noqtis-0.1.1.tar.gz"
-  sha256 "e3247ccfed3f41b5c2d7cea841b7e21633628d56d63431bc1135d61445ce2588"
+  url "https://github.com/rootcoder007/noqtis/releases/download/v0.1.2/noqtis-0.1.2.tar.gz"
+  sha256 "ef40d31d57bf467aa58ad98dea73c58e1edda6ddd863d34856bf0c5185f91bb7"
   license "Apache-2.0" => { with: "LLVM-exception" }
   head "https://github.com/rootcoder007/noqtis.git", branch: "main"
 
